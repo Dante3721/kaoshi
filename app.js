@@ -1209,6 +1209,12 @@
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('sw.js').catch(function () { });
+      // 新版本接管后自动刷新一次，避免用户一直停留在旧排版
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (window.__zkReloaded) return;
+        window.__zkReloaded = true;
+        location.reload();
+      });
     });
   }
 })();
