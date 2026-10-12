@@ -1,5 +1,6 @@
-/* Service Worker：离线优先。全部路径用相对路径，兼容 GitHub Pages 子目录部署。 */
-const CACHE = 'zkplan-v1';
+/* Service Worker：离线优先。全部路径用相对路径，兼容 GitHub Pages 子目录部署。
+   每次发布都要改 CACHE 版本号 —— 改了这个，所有客户端会丢弃旧缓存重新拉取。 */
+const CACHE = 'zkplan-v2-typography';
 const ASSETS = [
   './',
   './index.html',
