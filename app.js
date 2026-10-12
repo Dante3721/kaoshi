@@ -1,4 +1,4 @@
-﻿/* 中级+CPA 备考 PWA — 主逻辑 */
+/* 中级+CPA 备考 PWA — 主逻辑 */
 (function () {
   'use strict';
 
@@ -42,7 +42,8 @@
     errors: [],            // {id,date,subject,chapter,type,note,fix,done,recur}
     settings: {
       morning: '06:30', noon: '12:30', evening: '20:00',
-      target: 15, examDate: P.meta.cpaExam, examDate2: P.meta.zjExam
+      target: 15, examDate: P.meta.cpaExam, examDate2: P.meta.zjExam,
+      textSize: 1
     }
   };
   var S = load();
@@ -77,6 +78,36 @@
     t.textContent = msg; t.hidden = false;
     clearTimeout(toast._t);
     toast._t = setTimeout(function () { t.hidden = true; }, 1900);
+  }
+
+  // ============================================================ 字号
+  var TEXT_STEPS = [
+    { v: 0.95, label: '紧凑' },
+    { v: 1.00, label: '标准' },
+    { v: 1.10, label: '大' },
+    { v: 1.22, label: '特大' }
+  ];
+  function applyTextSize() {
+    var v = +S.settings.textSize || 1;
+    document.documentElement.style.setProperty('--ts', String(v));
+    document.documentElement.setAttribute('data-ts', String(v));
+  }
+  function textStepIndex() {
+    var v = +S.settings.textSize || 1;
+    var best = 1, diff = 99;
+    TEXT_STEPS.forEach(function (s, i) {
+      var d = Math.abs(s.v - v);
+      if (d < diff) { diff = d; best = i; }
+    });
+    return best;
+  }
+  function cycleTextSize(dir) {
+    var i = Math.max(0, Math.min(TEXT_STEPS.length - 1, textStepIndex() + dir));
+    S.settings.textSize = TEXT_STEPS[i].v;
+    save(true);
+    applyTextSize();
+    render();
+    toast('字号：' + TEXT_STEPS[i].label);
   }
 
   // ============================================================ 周定位
@@ -159,7 +190,9 @@
     var zjDays = daysBetween(d2s(TODAY), P.meta.zjExam);
     $('#tbRight').innerHTML =
       (cpaDays >= 0 ? '<span class="pill acc">CPA ' + cpaDays + '天</span>' : '') +
-      (zjDays >= 0 ? '<span class="pill">中级 ' + zjDays + '天</span>' : '');
+      (zjDays >= 0 ? '<span class="pill">中级 ' + zjDays + '天</span>' : '') +
+      '<button class="tsbtn" data-tsize="-1" title="字号调小">A−</button>' +
+      '<button class="tsbtn" data-tsize="1" title="字号调大">A＋</button>';
 
     // Hero
     var wk = CUR_W >= 1 ? weekByNo(CUR_W) : null;
@@ -174,13 +207,13 @@
     var pct = Math.min(100, Math.round(weekHours / S.settings.target * 100));
     $('#heroCard').innerHTML =
       '<div class="between"><div><div class="tiny">本周（第' + CUR_W + '周）已完成</div>' +
-      '<div style="font-size:26px;font-weight:800;margin:2px 0 0">' + weekHours.toFixed(1) +
-      '<span style="font-size:14px;color:var(--txt2);font-weight:600"> / ' + S.settings.target + ' 小时</span></div></div>' +
+      '<div class="big-num" style="margin:2px 0 0">' + weekHours.toFixed(1) +
+      '<small> / ' + S.settings.target + ' 小时</small></div></div>' +
       '<div style="text-align:right"><div class="pill ' + (pct >= 100 ? 'ok' : 'acc') + '">' + pct + '%</div>' +
       '<div class="tiny" style="margin-top:6px">今日完成 ' + dh + '/5</div></div></div>' +
       '<div class="bar" style="margin-top:12px"><i style="width:' + pct + '%"></i></div>' +
       (wk ? '<div class="hr"></div><div class="tiny">本周目标</div>' +
-        '<div style="font-size:13.5px;font-weight:600;margin-top:4px;line-height:1.45">' +
+        '<div class="t-mid" style="margin-top:5px">' +
         esc(wk.goal) + '</div>' : '');
 
     // 今日任务清单
@@ -208,7 +241,7 @@
     });
     html += '<div class="hr"></div><div class="row" style="justify-content:space-between">' +
       '<div><div class="tiny">今日实际学习</div>' +
-      '<div style="font-size:17px;font-weight:800">' + (+rec.hours || 0).toFixed(1) + ' h</div></div>' +
+      '<div class="num-md">' + (+rec.hours || 0).toFixed(1) + ' h</div></div>' +
       '<div class="stepper"><button data-h="-0.5">−</button><div class="val">0.5h</div>' +
       '<button data-h="0.5">＋</button></div></div>' +
       '<div class="btnblock"><button class="btn sm" data-quick="1">+1h</button>' +
@@ -234,13 +267,13 @@
     if (ms) {
       var dd = daysBetween(d2s(TODAY), ms.date);
       nh += '<div class="between" style="align-items:flex-start">' +
-        '<div style="flex:1"><div style="font-weight:700;font-size:14px">' + esc(ms.title) + '</div>' +
+        '<div style="flex:1"><div class="t-strong">' + esc(ms.title) + '</div>' +
         '<div class="muted" style="margin-top:4px">' + esc(ms.desc) + '</div></div>' +
         '<span class="pill ' + (dd <= 7 ? 'warn' : 'acc') + '">' + (dd === 0 ? '今天' : dd + '天后') + '</span></div>';
     }
     if (ex) {
       nh += '<div class="hr"></div><div class="tiny">最近一场考试</div>' +
-        '<div style="font-weight:700;font-size:14px">★ ' + esc(ex.name) + '　' + ex.date + ' ' +
+        '<div class="t-strong">★ ' + esc(ex.name) + '　' + ex.date + ' ' +
         ex.start + '—' + ex.end + '（' + ex.dur + '）</div>';
     }
     $('#nextCard').innerHTML = nh;
@@ -291,7 +324,7 @@
       }
       h += '<div class="tl-item ' + (isToday ? 'now' : (isPast ? 'past' : '')) + '">' +
         '<div class="tl-dot"></div><div style="flex:1">' +
-        '<div class="between"><div style="font-weight:700;font-size:13.5px">' +
+        '<div class="between"><div class="t-strong">' +
         (d.getMonth() + 1) + '/' + d.getDate() + ' 周' + WD[dow] +
         (isToday ? '<span class="now-tag">今天</span>' : '') + '</div>' +
         '<div class="tiny">' + doneN + ' 项 · ' + (+r.hours || 0).toFixed(1) + 'h</div></div>' +
@@ -307,7 +340,7 @@
       var done = Math.max(0, Math.min(CUR_W, p.to) - p.from + 1);
       var pct = Math.round(done / total * 100);
       h += '<div style="margin-bottom:10px"><div class="between" style="margin-bottom:4px">' +
-        '<span style="font-size:12.5px;font-weight:600">' + esc(p.name) + '</span>' +
+        '<span class="t-mid">' + esc(p.name) + '</span>' +
         '<span class="tiny">第' + p.from + '—' + p.to + '周</span></div>' +
         '<div class="bar sm"><i style="width:' + pct + '%"></i></div></div>';
     });
@@ -347,7 +380,7 @@
         esc(w.goal) + (w.w === CUR_W ? '<span class="now-tag">本周</span>' : '') +
         '<div class="wk-m">' + w.start.slice(5) + ' — ' + w.end.slice(5) +
         '　·　' + esc(w.phase.split('｜')[0]) + (done ? '　·　✅ 已完成' : '') + '</div>' +
-        '</div><div style="color:var(--txt3);font-size:18px">›</div></div>' +
+        '</div><div class="chev">›</div></div>' +
         '<div class="wk-b">' + weekDetailHTML(w) +
         '<div class="btnblock"><button class="btn sm ' + (done ? 'ok' : '') +
         '" data-wdone="' + w.w + '">' + (done ? '✓ 已标记完成' : '标记本周完成') + '</button></div>' +
@@ -417,27 +450,35 @@
       '<div class="btnblock"><button class="btn sm pri" data-day="' + d2s(TODAY) + '">给今天记学时</button>' +
       '<button class="btn sm" data-month="1">查看整月/全程</button></div></div>';
 
-    // 全部 46 周热力图
+    // 全程 46 周热力图：拆成两块大图，格子大一倍，手机上才看得清
     h += '<div class="card"><h2>全程打卡（46 周）</h2>' +
-      '<div class="tiny" style="margin-bottom:6px">每格 = 1 天，颜色越深学时越多。点格子可补记。</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">';
-    ['一', '二', '三', '四', '五', '六', '日'].forEach(function (x) {
-      h += '<div class="hd">' + x + '</div>';
-    });
+      '<div class="tiny" style="margin-bottom:10px">每格 = 1 天，颜色越深学时越多。点格子可补记。</div>';
     var allDays = weeksIn(P.meta.start, P.meta.end, false);
-    // 补齐首周之前的空位
-    var firstDow = s2d(P.meta.start).getDay();
-    var pad = (firstDow + 6) % 7;
-    for (var i = 0; i < pad; i++) h += '<div></div>';
-    allDays.forEach(function (d) {
-      var ds = d2s(d), r = S.checkins[ds];
-      var hrs = r ? (+r.hours || 0) : 0;
-      var lv = hrs <= 0 ? 'zero' : (hrs < 1.5 ? 'l1' : (hrs < 3 ? 'l2' : 'l3'));
-      var isToday = ds === d2s(TODAY);
-      h += '<div class="cell ' + lv + (isToday ? ' today' : '') + '" data-day="' + ds +
-        '" style="aspect-ratio:1;border-radius:4px;font-size:0"></div>';
+    var HALF = 23;   // 前 23 周 / 后 23 周
+    [0, 1].forEach(function (part) {
+      var slice = allDays.slice(part * HALF * 7, (part + 1) * HALF * 7);
+      if (!slice.length) return;
+      h += '<h3>' + (part === 0 ? '第 1—23 周' : '第 24—46 周') + '</h3>' +
+        '<div class="heat">';
+      ['一', '二', '三', '四', '五', '六', '日'].forEach(function (x) {
+        h += '<div class="hd">' + x + '</div>';
+      });
+      // 首块补齐起始空位
+      if (part === 0) {
+        var pad = (s2d(P.meta.start).getDay() + 6) % 7;
+        for (var i = 0; i < pad; i++) h += '<div></div>';
+      }
+      slice.forEach(function (d) {
+        var ds = d2s(d), r = S.checkins[ds];
+        var hrs = r ? (+r.hours || 0) : 0;
+        var lv = hrs <= 0 ? 'zero' : (hrs < 1.5 ? 'l1' : (hrs < 3 ? 'l2' : 'l3'));
+        var isToday = ds === d2s(TODAY);
+        h += '<div class="cell ' + lv + (isToday ? ' today' : '') + '" data-day="' + ds +
+          '" title="' + ds + '">' + (hrs > 0 ? hrs.toFixed(1) : d.getDate()) + '</div>';
+      });
+      h += '</div>';
     });
-    h += '</div></div>';
+    h += '</div>';
 
     // 章节进度
     h += '<div class="card"><div class="between"><h2>章节进度</h2>' +
@@ -446,8 +487,8 @@
       var grp = P.chapters[sid];
       var done = grp.items.filter(function (c) { return (S.chapters[sid + ':' + c.ch] || {}).done; }).length;
       var pct = Math.round(done / grp.items.length * 100);
-      h += '<div style="margin-bottom:12px"><div class="between" style="margin-bottom:4px">' +
-        '<span style="font-size:13px;font-weight:600">' + esc(grp.label) + '</span>' +
+      h += '<div style="margin-bottom:14px"><div class="between" style="margin-bottom:5px">' +
+        '<span class="t-mid">' + esc(grp.label) + '</span>' +
         '<span class="tiny">' + done + '/' + grp.items.length + '　' + pct + '%</span></div>' +
         '<div class="bar sm"><i style="width:' + pct + '%"></i></div></div>';
     });
@@ -618,11 +659,11 @@
     h += '<div class="card"><h2>两考差异速查</h2>';
     P.diffs.forEach(function (d) {
       h += '<h3>' + esc(d.subject) + '　<span class="pill">重合 ' + esc(d.overlap) + '</span></h3>' +
-        '<div class="kv"><span class="k" style="flex-shrink:0">中级独有</span><span style="text-align:right;font-size:12.5px">' +
-        esc(d.mid_only) + '</span></div>' +
-        '<div class="kv"><span class="k" style="flex-shrink:0">CPA独有</span><span style="text-align:right;font-size:12.5px">' +
-        esc(d.cpa_only) + '</span></div>' +
-        '<div class="muted" style="margin-bottom:12px">⚠ ' + esc(d.tip) + '</div>';
+        '<div class="lrow"><div class="lt t-label">中级独有</div>' +
+        '<div class="lt t-body">' + esc(d.mid_only) + '</div></div>' +
+        '<div class="lrow"><div class="lt t-label">CPA独有</div>' +
+        '<div class="lt t-body">' + esc(d.cpa_only) + '</div></div>' +
+        '<div class="muted" style="margin:10px 0 14px">⚠ ' + esc(d.tip) + '</div>';
     });
     h += '</div>';
 
@@ -635,7 +676,19 @@
     $('#tbSub').textContent = '作息时间、周目标、日历生成';
     $('#tbRight').innerHTML = '';
     var s = S.settings;
-    var h = '<div class="card"><h2>我的作息时间</h2>' +
+    var tsi = textStepIndex();
+    var h = '<div class="card"><h2>显示字号</h2>' +
+      '<div class="muted" style="margin-bottom:12px">觉得字小或者看着吃力就调大。' +
+      '顶栏的 A− / A＋ 也能随时切换。</div>' +
+      '<div class="row" style="gap:8px;flex-wrap:wrap">';
+    TEXT_STEPS.forEach(function (step, i) {
+      h += '<button class="btn ' + (i === tsi ? 'pri' : '') + ' sm" data-tsset="' + step.v + '">' +
+        step.label + '（' + Math.round(17 * step.v) + 'px）</button>';
+    });
+    h += '</div><div class="tiny" style="margin-top:10px">当前：' +
+      TEXT_STEPS[tsi].label + '　正文 ' + Math.round(17 * (+s.textSize || 1)) + 'px</div></div>';
+
+    h += '<div class="card"><h2>我的作息时间</h2>' +
       '<div class="muted" style="margin-bottom:12px">改完时间后，点下面的按钮会按新时间重新生成日历文件。' +
       '日历仍负责锁屏提醒，App 负责打卡与错题。</div>' +
       '<div class="field"><label>① 记忆时段（工作日）</label><input type="time" data-set="morning" value="' + s.morning + '"></div>' +
@@ -940,8 +993,18 @@
       '[data-saveday],[data-day],[data-month],[data-week],[data-wdone],[data-phase],' +
       '[data-chap],[data-chip],[data-chapdone],[data-adderr],[data-ef],[data-edone],' +
       '[data-erecur],[data-eedit],[data-edel],[data-saveerr],[data-export],[data-import],' +
-      '[data-ics],[data-ichelp],[data-reset],[data-close-sheet],[data-detail]');
+      '[data-ics],[data-ichelp],[data-reset],[data-close-sheet],[data-detail],' +
+      '[data-tsize],[data-tsset]');
     if (!el) return;
+
+    // 字号调节
+    if (el.dataset.tsize) { cycleTextSize(parseInt(el.dataset.tsize, 10) > 0 ? 1 : -1); return; }
+    if (el.dataset.tsset) {
+      S.settings.textSize = parseFloat(el.dataset.tsset);
+      save(true); applyTextSize(); render();
+      toast('字号已设为 ' + (TEXT_STEPS[textStepIndex()] || {}).label);
+      return;
+    }
 
     // 关闭弹层
     if (el.hasAttribute('data-close-sheet') || el.classList.contains('sheet-mask')) {
@@ -1128,6 +1191,7 @@
   $('#tbTitle').addEventListener('dblclick', function () { go('settings'); });
 
   // ============================================================ 启动
+  applyTextSize();
   go('today');
 
   // 每天首次打开时，如果昨天有未记录，提示一下
