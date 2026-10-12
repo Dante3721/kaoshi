@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1419">
+<meta name="description" content="中级会计3科 + CPA3科 同考备考打卡 App：46周计划、打卡学时、错题本、进度统计，离线可用">
+<title>中级+CPA 备考</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="tb-l">
+    <div class="tb-t" id="tbTitle">今日</div>
+    <div class="tb-s" id="tbSub">加载中…</div>
+  </div>
+  <div class="tb-r" id="tbRight"></div>
+</header>
+
+<main id="main">
+
+  <!-- ============ 首页 ============ -->
+  <section class="screen" id="screen-today">
+    <div class="card hero" id="heroCard"></div>
+    <div class="card" id="todayCard"></div>
+    <div class="card" id="focusCard"></div>
+    <div class="card" id="nextCard"></div>
+  </section>
+
+  <!-- ============ 本周 ============ -->
+  <section class="screen" id="screen-week" hidden>
+    <div id="weekBody"></div>
+  </section>
+
+  <!-- ============ 计划 ============ -->
+  <section class="screen" id="screen-plan" hidden>
+    <div class="chips" id="phaseChips"></div>
+    <div id="weekList"></div>
+  </section>
+
+  <!-- ============ 打卡 ============ -->
+  <section class="screen" id="screen-checkin" hidden>
+    <div class="card" id="checkinCard"></div>
+    <div class="card" id="chapterCard"></div>
+  </section>
+
+  <!-- ============ 错题 ============ -->
+  <section class="screen" id="screen-errors" hidden>
+    <div id="errorsBody"></div>
+  </section>
+
+  <!-- ============ 统计 ============ -->
+  <section class="screen" id="screen-stats" hidden>
+    <div id="statsBody"></div>
+  </section>
+
+  <!-- ============ 设置 ============ -->
+  <section class="screen" id="screen-settings" hidden>
+    <div id="settingsBody"></div>
+  </section>
+
+</main>
+
+<nav class="tabbar" id="tabbar">
+  <button class="tab active" data-nav="today"><span>今日</span></button>
+  <button class="tab" data-nav="week"><span>本周</span></button>
+  <button class="tab" data-nav="plan"><span>计划</span></button>
+  <button class="tab" data-nav="checkin"><span>打卡</span></button>
+  <button class="tab" data-nav="errors"><span>错题</span></button>
+  <button class="tab" data-nav="stats"><span>统计</span></button>
+</nav>
+
+<div class="sheet-wrap" id="sheetWrap" hidden>
+  <div class="sheet-mask" data-close-sheet></div>
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
